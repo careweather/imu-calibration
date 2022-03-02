@@ -10,10 +10,11 @@
 #
 #
 ######################################################
+
 #
 # wait 5-sec for IMU to connect
 import time,sys
-sys.path.append("../")
+# sys.path.append("../")
 t0 = time.time()
 start_bool = False # if IMU start fails - stop calibration
 while time.time()-t0<5:
@@ -40,7 +41,7 @@ def get_gyro():
 def gyro_cal():
     print("-"*50)
     print('Gyro Calibrating - Keep the IMU Steady')
-    [get_gyro() for ii in range(0,cal_size)] # clear buffer before calibration
+    # [get_gyro() for ii in range(0,cal_size)] # clear buffer before calibration TODO: remove. this is handled by mpu script
     mpu_array = []
     gyro_offsets = [0.0,0.0,0.0]
     while True:
@@ -68,7 +69,7 @@ if __name__ == '__main__':
         ###################################
         #
         gyro_labels = ['w_x','w_y','w_z'] # gyro labels for plots
-        cal_size = 500 # points to use for calibration
+        cal_size = 100 # points to use for calibration
         gyro_offsets = gyro_cal() # calculate gyro offsets
         #
         ###################################
@@ -83,6 +84,7 @@ if __name__ == '__main__':
         #
         plt.style.use('ggplot')
         fig,axs = plt.subplots(2,1,figsize=(12,9))
+        print("Offsets: ", gyro_offsets)
         for ii in range(0,3):
             axs[0].plot(data[:,ii],
                         label='${}$, Uncalibrated'.format(gyro_labels[ii]))

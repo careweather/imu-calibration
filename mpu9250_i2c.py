@@ -10,47 +10,35 @@
 #
 #########################################
 #
-import smbus,time
+import time
+import serial
+
+# port=input("Enter the port number: ")
+
+arduino = serial.Serial(port="/dev/ttyACM0", baudrate=115200, timeout=.1)
+
+def write(x):
+    arduino.write(bytes(x + "\n", 'utf-8'))
+    time.sleep(0.05)
+
+def read(check):
+    data = arduino.readline().decode("utf-8")
+    while check not in data:
+        data = arduino.readline().decode("utf-8")
+    return data
+
 
 def MPU6050_start():
-
     # TODO: repopulate with serial confirmation of start and with IMU config value settings from serial connection (refer to source of fork)
     return 250.0, 2.0
-    
-def read_raw_bits(register):
-    # read accel and gyro values
-    high = bus.read_byte_data(MPU6050_ADDR, register)
-    low = bus.read_byte_data(MPU6050_ADDR, register+1)
-
-    # combine higha and low for unsigned bit value
-    value = ((high << 8) | low)
-    
-    # convert to +- value
-    if(value > 32768):
-        value -= 65536
-    return value
 
 def mpu6050_conv():
-    # raw acceleration bits
-    acc_x = read_raw_bits(ACCEL_XOUT_H)
-    acc_y = read_raw_bits(ACCEL_YOUT_H)
-    acc_z = read_raw_bits(ACCEL_ZOUT_H)
+    # get list of imu values from serial connection
+    write("imu")
+    accel = read("ACCEL").split(":")[1][:-2].split("\t")
+    gyro = read("GYRO").split(":")[1][:-2].split("\t")
     
-    # raw gyroscope bits
-    gyro_x = read_raw_bits(GYRO_XOUT_H)
-    gyro_y = read_raw_bits(GYRO_YOUT_H)
-    gyro_z = read_raw_bits(GYRO_ZOUT_H)
-
-    #convert to acceleration in g and gyro dps
-    a_x = (acc_x/(2.0**15.0))*accel_sens
-    a_y = (acc_y/(2.0**15.0))*accel_sens
-    a_z = (acc_z/(2.0**15.0))*accel_sens
-
-    w_x = (gyro_x/(2.0**15.0))*gyro_sens
-    w_y = (gyro_y/(2.0**15.0))*gyro_sens
-    w_z = (gyro_z/(2.0**15.0))*gyro_sens
-    
-    return a_x,a_y,a_z,w_x,w_y,w_z
+    return float(accel[0]), float(accel[1]), float(accel[2]), float(gyro[0]), float(gyro[1]), float(gyro[2])
 
 # def AK8963_start():
 #     bus.write_byte_data(AK8963_ADDR,AK8963_CNTL,0x00)

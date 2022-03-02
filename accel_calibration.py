@@ -10,10 +10,13 @@
 #
 #
 ######################################################
+
+#TODO: doing this in sequence involves overlapping sides. Make faster by collecting data for multiple axes at once.
+
 #
 # wait 5-sec for IMU to connect
 import time,sys
-sys.path.append('../')
+# sys.path.append('../')
 t0 = time.time()
 start_bool = False # if IMU start fails - stop calibration
 while time.time()-t0<5:
@@ -52,9 +55,9 @@ def accel_cal():
         ax_offsets = [[],[],[]]
         print("-"*50)
         for direc_ii,direc in enumerate(cal_directions):
-            input("-"*8+" Press Enter and Keep IMU Steady to Calibrate the Accelerometer with the -"+\
+            input("-"*8+" Press Enter and Keep IMU Steady to Calibrate the Accelerometer with the "+\
               ax_qq+"-axis pointed "+direc)
-            [mpu6050_conv() for ii in range(0,cal_size)] # clear buffer between readings
+            # [mpu6050_conv() for ii in range(0,cal_size)] # clear buffer between readings TODO: remove. this is handled by mpu script
             mpu_array = []
             while len(mpu_array)<cal_size:
                 try:
@@ -85,19 +88,21 @@ if __name__ == '__main__':
         ###################################
         #
         accel_labels = ['a_x','a_y','a_z'] # gyro labels for plots
-        cal_size = 1000 # number of points to use for calibration 
+        cal_size = 10 # number of points to use for calibration
         accel_coeffs = accel_cal() # grab accel coefficients
-#
+        #
         ###################################
         # Record new data 
         ###################################
         #
+        print("Getting new values for comparison...")
         data = np.array([get_accel() for ii in range(0,cal_size)]) # new values
         #
         ###################################
         # Plot with and without offsets
         ###################################
         #
+        print("Coefficients (m, b): ", accel_coeffs)
         plt.style.use('ggplot')
         fig,axs = plt.subplots(2,1,figsize=(12,9))
         for ii in range(0,3):
