@@ -25,6 +25,7 @@ def read(check):
     data = arduino.readline().decode("utf-8")
     while check not in data:
         data = arduino.readline().decode("utf-8")
+    time.sleep(1.5)
     return data
 
 
