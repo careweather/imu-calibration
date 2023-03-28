@@ -29,7 +29,12 @@ import csv
 import matplotlib.pyplot as plt
 
 time.sleep(2) # wait for mpu to load
-# 
+
+n_cal = 50 # number of calibration samples
+last_coeffs = [-8.475, -6.8999999999, -14.925] # last calibration coefficients  #Uncomment for repeatability testing
+# last_coeffs = [-21.75, -40.35, 6.0] # last calibration coefficients  #Uncomment for repeatability testing
+
+#
 #####################################
 # Mag Calibration Functions
 #####################################
@@ -60,20 +65,17 @@ def mag_cal():
     mag_cal_rotation_vec = [] # variable for calibration calculations
     for qq,ax_qq in enumerate(mag_cal_axes):
         input("-"*8+" Press Enter and Start Rotating the IMU Around the "+ax_qq+"-axis")
-        print("\t When Finished, Press CTRL+C")
         mag_array = []
         t0 = time.time()
-        while True:
-            try:
-                mx,my,mz = AK8963_conv() # read and convert AK8963 magnetometer data
-            except KeyboardInterrupt:
-                break
-            except:
-                continue
-            mag_array.append([mx,my,mz]) # mag array
-        mag_array = mag_array[20:] # throw away first few points (buffer clearing)
+        for step in range(n_cal):
+            mx, my, mz = read_magnetometer()
+            mag_array.append([mx,my,mz])
+
+            # Update progress bar
+            sys.stdout.write("\r[{0}] {1:2.0f}°".format('#'*(step+1), (step+1)*360/n_cal))
+
         mag_cal_rotation_vec.append(mag_array) # calibration array
-        print("Sample Rate: {0:2.0f} Hz".format(len(mag_array)/(time.time()-t0)))
+        print("\nSample Rate: {0:2.0f} Hz".format(len(mag_array)/(time.time()-t0)))
         
     mag_cal_rotation_vec = np.array(mag_cal_rotation_vec) # make numpy array
     ak_fit_coeffs = []
@@ -106,8 +108,10 @@ def mag_cal_plot():
                     format(mag_cal_axes[mag_ii],
                            mag_labels[cal_rot_indices[mag_ii][0]],
                            mag_labels[cal_rot_indices[mag_ii][1]]))
-        axs[1].scatter(x-mag_coeffs[cal_rot_indices[mag_ii][0]],
-                    y-mag_coeffs[cal_rot_indices[mag_ii][1]],
+        axs[1].scatter(x-last_coeffs[cal_rot_indices[mag_ii][0]], #Comment out for repeatability testing
+                    y-last_coeffs[cal_rot_indices[mag_ii][1]], #Comment out for repeatability testing
+        # axs[1].scatter(x-mag_coeffs[cal_rot_indices[mag_ii][0]], #Uncomment for repeatability testing
+        #             y-mag_coeffs[cal_rot_indices[mag_ii][1]], #Uncomment for repeatability testing
                        label='Rotation Around ${0}$-axis (${1},{2}$)'.\
                     format(mag_cal_axes[mag_ii],
                            mag_labels[cal_rot_indices[mag_ii][0]],
@@ -145,5 +149,6 @@ if __name__ == '__main__':
         ###################################
         #
         mag_cal_plot() # plot un-calibrated and calibrated results
+        print(mag_coeffs)
         #
         

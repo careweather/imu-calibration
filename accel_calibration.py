@@ -13,6 +13,8 @@
 
 #TODO: doing this in sequence involves overlapping sides. Make faster by collecting data for multiple axes at once.
 
+local_gravity = 9.79764 # m/s^2, Care Weather HQ
+
 #
 # wait 5-sec for IMU to connect
 import time,sys
@@ -67,11 +69,16 @@ def accel_cal():
                     continue
             ax_offsets[direc_ii] = np.array(mpu_array)[:,cal_indices[qq]] # offsets for direction
 
+            # Save mpu_array for this axis to csv
+            with open('accel_'+ax_qq+axis_vec[qq]+'.csv','w') as f:
+                writer = csv.writer(f)
+                writer.writerows(mpu_array)
+
         # Use three calibrations (+1g, -1g, 0g) for linear fit
         popts,_ = curve_fit(accel_fit,np.append(np.append(ax_offsets[0],
                                  ax_offsets[1]),ax_offsets[2]),
-                   np.append(np.append(1.0*np.ones(np.shape(ax_offsets[0])),
-                    -1.0*np.ones(np.shape(ax_offsets[1]))),
+                   np.append(np.append(local_gravity*np.ones(np.shape(ax_offsets[0])),
+                    -local_gravity*np.ones(np.shape(ax_offsets[1]))),
                         0.0*np.ones(np.shape(ax_offsets[2]))),
                             maxfev=10000)
         mpu_offsets[cal_indices[qq]] = popts # place slope and intercept in offset array
@@ -88,7 +95,7 @@ if __name__ == '__main__':
         ###################################
         #
         accel_labels = ['a_x','a_y','a_z'] # gyro labels for plots
-        cal_size = 10 # number of points to use for calibration
+        cal_size = 500 # number of points to use for calibration
         accel_coeffs = accel_cal() # grab accel coefficients
         #
         ###################################
@@ -111,11 +118,11 @@ if __name__ == '__main__':
             axs[1].plot(accel_fit(data[:,ii],*accel_coeffs[ii]),
                         label='${}$, Calibrated'.format(accel_labels[ii]))
         axs[0].legend(fontsize=14);axs[1].legend(fontsize=14)
-        axs[0].set_ylabel('$a_{x,y,z}$ [g]',fontsize=18)
-        axs[1].set_ylabel('$a_{x,y,z}$ [g]',fontsize=18)
+        axs[0].set_ylabel('$a_{x,y,z}$ [m/s^2]',fontsize=18)
+        axs[1].set_ylabel('$a_{x,y,z}$ [m/s^2]',fontsize=18)
         axs[1].set_xlabel('Sample',fontsize=18)
-        axs[0].set_ylim([-2,2]);axs[1].set_ylim([-2,2])
-        axs[0].set_title('Accelerometer Calibration Calibration Correction',fontsize=18)
+        axs[0].set_ylim([-10,10]);axs[1].set_ylim([-10,10])
+        axs[0].set_title('Accelerometer Calibration Correction',fontsize=18)
         fig.savefig('accel_calibration_output.png',dpi=300,
                     bbox_inches='tight',facecolor='#FCFCFC')
         fig.show()

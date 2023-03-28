@@ -39,40 +39,13 @@ def get_gyro():
     _,_,_,wx,wy,wz = mpu6050_conv() # read and convert gyro data
     return wx,wy,wz
 
-def gyro_cal():
-    print("-"*50)
-    print('Gyro Calibrating - Keep the IMU Steady')
-    [get_gyro() for ii in range(0,cal_size)] # clear buffer before calibration
-    mpu_array = []
-    gyro_offsets = [0.0,0.0,0.0]
-    while True:
-        try:
-            wx,wy,wz = get_gyro() # get gyro vals
-        except:
-            continue
-
-        mpu_array.append([wx,wy,wz])
-
-        if np.shape(mpu_array)[0]==cal_size:
-            for qq in range(0,3):
-                gyro_offsets[qq] = np.mean(np.array(mpu_array)[:,qq]) # average
-            break
-    print('Gyro Calibration Complete')
-    return gyro_offsets
-
 if __name__ == '__main__':
     if not start_bool:
         print("IMU not Started - Check Wiring and I2C")
     else:
-        #
-        ###################################
-        # Gyroscope Offset Calculation
-        ###################################
-        #
+
         gyro_labels = ['\omega_x','\omega_y','\omega_z'] # gyro labels for plots
-        cal_size = 500 # points to use for calibration
-        gyro_offsets = gyro_cal() # calculate gyro offsets
-        #
+        
         ###################################
         # Record new data 
         ###################################
@@ -83,6 +56,10 @@ if __name__ == '__main__':
         data,t_vec = [],[]
         t0 = time.time()
         while time.time()-t0<record_time:
+            # print progress
+            print("\r{:2.0f}°".format(360*(time.time()-t0)/record_time),end='')
+            
+            # read data
             data.append(get_gyro())
             t_vec.append(time.time()-t0)
         samp_rate = np.shape(data)[0]/(t_vec[-1]-t_vec[0]) # sample rate
@@ -94,7 +71,7 @@ if __name__ == '__main__':
         ##################################
         #
         rot_axis = 2 # axis being rotated (2 = z-axis)
-        data_offseted = np.array(data)[:,rot_axis]-gyro_offsets[rot_axis]
+        data_offseted = np.array(data)[:,rot_axis]
         integ1_array = cumtrapz(data_offseted,x=t_vec) # integrate once in time
         #
         # print out reuslts

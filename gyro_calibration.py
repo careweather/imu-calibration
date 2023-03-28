@@ -41,7 +41,6 @@ def get_gyro():
 def gyro_cal():
     print("-"*50)
     print('Gyro Calibrating - Keep the IMU Steady')
-    # [get_gyro() for ii in range(0,cal_size)] # clear buffer before calibration TODO: remove. this is handled by mpu script
     mpu_array = []
     gyro_offsets = [0.0,0.0,0.0]
     while True:
@@ -56,6 +55,13 @@ def gyro_cal():
             for qq in range(0,3):
                 gyro_offsets[qq] = np.mean(np.array(mpu_array)[:,qq]) # average
             break
+
+    # save mpu_array to file
+    with open('gyro.csv','w') as f:
+        writer = csv.writer(f)
+        writer.writerows(mpu_array)
+
+
     print('Gyro Calibration Complete')
     return gyro_offsets
 
@@ -69,7 +75,7 @@ if __name__ == '__main__':
         ###################################
         #
         gyro_labels = ['w_x','w_y','w_z'] # gyro labels for plots
-        cal_size = 100 # points to use for calibration
+        cal_size = 500 # points to use for calibration
         gyro_offsets = gyro_cal() # calculate gyro offsets
         #
         ###################################
